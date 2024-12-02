@@ -1,21 +1,24 @@
 #!/usr/bin/env ruby
-reports =
-  File
-    .open('../input/day02')
-    .map(&:strip)
-    .reject(&:empty?)
-    .map do |line|
-      line.split(/\s+/).map(&:to_i)
-    end
+# frozen_string_literal: true
 
-tmp = reports.map do |report|
+def get_diffs(report)
   diffs = []
   report.take(report.count - 1).each_index do |index|
-    diffs << report[index] - report[index+1]
+    diffs << (report[index] - report[index + 1])
   end
   diffs
 end
-tmp = tmp.select do |diffs|
-  (diffs.all? { |d| d > 0 } || diffs.all? { |d| d < 0 }) && diffs.all? { |d| d.abs >= 1 && d.abs <= 3 }
+
+def safe?(report)
+  diffs = get_diffs report
+  (diffs.all?(&:positive?) || diffs.all?(&:negative?)) && diffs.all? { |d| d.abs >= 1 && d.abs <= 3 }
 end
-puts tmp.count
+
+reports =
+  File
+  .open('../input/day02')
+  .map(&:strip)
+  .reject(&:empty?)
+  .map { |line| line.split(/\s+/).map(&:to_i) }
+
+puts reports.select(&method(:safe?)).count
