@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 lists = File.open('../input/day01').map(&:strip).reject(&:empty?).map do |line|
-  parts = line.split /\s+/
+  parts = line.split(/\s+/)
   parts.map(&:to_i)
 end.reduce([[], []]) { |lists, parts|
   lists[0] << parts[0]
