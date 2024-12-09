@@ -1,58 +1,61 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Represents a simulation of a guard patrolling a warehouse.
 class Simulation
   attr_reader :visited
 
   def initialize(grid)
     @heading = :north
     @location = grid.each_with_index.map do |row, y|
-      parts = row.each_with_index.find { |cell, x| cell == '^' }
-      if parts
-        [y, parts[1]]
-      else
-        nil
-      end
+      parts = row.each_with_index.find { |cell, _x| cell == '^' }
+      [y, parts[1]] if parts
     end.compact.first
     @visited = [@location]
-    @grid = grid.map {|row| row.map {|cell| if cell == '^' then '.' else cell end}}
+    @grid = grid.map { |row| row.map { |cell| cell == '^' ? '.' : cell } }
   end
 
-  private def next_location
-    case
-    when @heading == :north
-      [@location[0]-1, @location[1]]
-    when @heading == :south
-      [@location[0]+1, @location[1]]
-    when @heading == :east
-      [@location[0], @location[1]+1]
-    when @heading == :west
-      [@location[0], @location[1]-1]
+  def run
+    move while valid?(@location)
+    @visited = @visited.select { |loc| valid? loc }
+  end
+
+  private
+
+  def next_location
+    case @heading
+    when :north
+      [@location[0] - 1, @location[1]]
+    when :south
+      [@location[0] + 1, @location[1]]
+    when :east
+      [@location[0], @location[1] + 1]
+    when :west
+      [@location[0], @location[1] - 1]
     end
   end
 
-  private def next_heading
-    case
-    when @heading == :north
-      :east
-    when @heading == :south
-      :west
-    when @heading == :east
-      :south
-    when @heading == :west
-      :north
-    end
+  NEXT_HEADING = {
+    north: :east,
+    east: :south,
+    south: :west,
+    west: :north
+  }.freeze
+
+  def next_heading
+    NEXT_HEADING[@heading]
   end
 
-  private def valid?(location)
-    location[0] >= 0 && location[0] < @grid.length && location[1] >= 0 && location[1] < @grid[0].length
+  def valid?(location)
+    location[0] >= 0 && location[0] < @grid.length &&
+      location[1] >= 0 && location[1] < @grid[0].length
   end
 
-  private def blocked?(location)
+  def blocked?(location)
     @grid[location[0]][location[1]] == '#'
   end
 
-  private def move
+  def move
     next_loc = next_location
     if valid?(next_loc) && blocked?(next_loc)
       @heading = next_heading
@@ -61,23 +64,15 @@ class Simulation
     @location = next_loc
     @visited << @location
   end
-
-  def run
-    while valid?(@location)
-      move
-    end
-    @visited = @visited.select {|loc| valid? loc}
-  end
 end
 
 grid =
   File
-    .open('../input/day06')
-    .readlines
-    .map(&:strip)
-    .map(&:chars)
+  .open('../input/day06')
+  .readlines
+  .map(&:strip)
+  .map(&:chars)
 
 simulation = Simulation.new(grid)
 simulation.run
 puts simulation.visited.uniq.count
-

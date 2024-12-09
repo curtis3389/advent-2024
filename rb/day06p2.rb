@@ -1,24 +1,25 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Represents a location on a Map.
 class Location
   attr_reader :type
-  
-  def initialize(c)
+
+  def initialize(col)
     @type =
-      case
-      when c == '.'
+      case col
+      when '.'
         :open
-      when c == '^'
+      when '^'
         :start
-      when c == '#'
+      when '#'
         :blocked
       end
     @visited = {
       north: false,
       south: false,
       east: false,
-      west: false,
+      west: false
     }
     @temporarily_blocked = false
   end
@@ -36,7 +37,7 @@ class Location
       north: false,
       south: false,
       east: false,
-      west: false,
+      west: false
     }
     @temporarily_blocked = false
   end
@@ -50,18 +51,15 @@ class Location
   end
 end
 
+# Represents a map/simulation of a guard patrolling a warehouse.
 class Map
   def initialize(grid)
-    @grid = grid.map {|row| row.map {|cell| Location.new(cell)}}
+    @grid = grid.map { |row| row.map { |cell| Location.new(cell) } }
     @height = @grid.length
     @width = @grid[0].length
     @start = @grid.each_with_index.map do |row, y|
-      parts = row.each_with_index.find { |cell, x| cell.type == :start }
-      if parts
-        [y, parts[1]]
-      else
-        nil
-      end
+      parts = row.each_with_index.find { |cell, _x| cell.type == :start }
+      [y, parts[1]] if parts
     end.compact.first
     @visited = []
   end
@@ -82,19 +80,18 @@ class Map
       location = next_loc
     end
     reset
-    @visited.select {|loc| valid?(loc) && loc != @start}.uniq
+    @visited.select { |loc| valid?(loc) && loc != @start }.uniq
   end
 
   def reset
     @grid.each do |row|
-      row.each do |cell|
-        cell.reset
-      end
+      row.each(&:reset)
     end
   end
 
   def visited?(location, heading)
-    return false if !valid?(location)
+    return false unless valid?(location)
+
     cell = @grid[location[0]][location[1]]
     cell.visited?(heading)
   end
@@ -114,9 +111,7 @@ class Map
         end
         location = next_loc
 
-        if visited?(location, heading)
-          return true
-        end
+        return true if visited?(location, heading)
       end
 
       false
@@ -125,51 +120,51 @@ class Map
     end
   end
 
-  private def mark(loc, heading)
+  private
+
+  def mark(loc, heading)
     @grid[loc[0]][loc[1]].visit(heading)
   end
 
-  private def valid?(loc)
+  def valid?(loc)
     loc[0] >= 0 && loc[0] < @height && loc[1] >= 0 && loc[1] < @width
   end
 
-  private def blocked?(location)
+  def blocked?(location)
     @grid[location[0]][location[1]].blocked?
   end
 
-  private def next_location(location, heading)
-    case
-    when heading == :north
-      [location[0]-1, location[1]]
-    when heading == :south
-      [location[0]+1, location[1]]
-    when heading == :east
-      [location[0], location[1]+1]
-    when heading == :west
-      [location[0], location[1]-1]
+  def next_location(location, heading)
+    case heading
+    when :north
+      [location[0] - 1, location[1]]
+    when :south
+      [location[0] + 1, location[1]]
+    when :east
+      [location[0], location[1] + 1]
+    when :west
+      [location[0], location[1] - 1]
     end
   end
 
-  private def next_heading(heading)
-    case
-    when heading == :north
-      :east
-    when heading == :south
-      :west
-    when heading == :east
-      :south
-    when heading == :west
-      :north
-    end
+  NEXT_HEADING = {
+    north: :east,
+    east: :south,
+    south: :west,
+    west: :north
+  }.freeze
+
+  def next_heading(heading)
+    NEXT_HEADING[heading]
   end
 end
-p
+
 grid =
   File
-    .open('../input/day06')
-    .readlines
-    .map(&:strip)
-    .map(&:chars)
+  .open('../input/day06')
+  .readlines
+  .map(&:strip)
+  .map(&:chars)
 
 m = Map.new(grid)
-puts m.visited.lazy.map {|l| if m.loops?(l) then 1 else 0 end}.sum
+puts m.visited.lazy.map { |l| m.loops?(l) ? 1 : 0 }.sum

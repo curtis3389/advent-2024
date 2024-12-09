@@ -1,38 +1,47 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Represents an equation missing its operators.
 class Equation
   attr_reader :result, :numbers
+
   def initialize(line)
-    @result, *@numbers = line.split(/(\s|:)+/).map(&:strip).select {|s| !s.empty?}.map(&:to_i)
+    parts =
+      line
+      .split(/(\s|:)+/)
+      .map(&:strip)
+      .reject(&:empty?)
+      .map(&:to_i)
+    @result, *@numbers = parts
   end
 
   def solvable?
     combos = combinations(@numbers)
-    combos.any? {|result| result == @result}
+    combos.any? { |result| result == @result }
   end
 
-  private def combinations(numbers)
+  private
+
+  def combinations(numbers)
     if numbers.length == 2
-      a,b = numbers
-      result = [a+b, a*b]
-      result
+      a, b = numbers
+      [a + b, a * b]
     else
       *rest, a = numbers
       combos = combinations(rest)
-      result = combos.map {|val| a + val} + combos.map {|val| a * val}
-      result
+      combos.map { |val| a + val } + combos.map { |val| a * val }
     end
   end
 end
 
 total =
   File
-    .open('../input/day07')
-    .readlines
-    .map(&:strip)
-    .map {|line| Equation.new(line)}
-    .select {|equation| equation.solvable?}
-    .map {|equation| equation.result}
-    .sum
+  .open('../input/day07')
+  .readlines
+  .map(&:strip)
+  .map { |line| Equation.new(line) }
+  .select(&:solvable?)
+  .map(&:result)
+  .sum
+
 puts total
